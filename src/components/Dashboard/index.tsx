@@ -1,6 +1,6 @@
 import './style.css';
 import React, { useLayoutEffect, useMemo } from 'react';
-import { dashboard, bitable, DashboardState, IConfig } from "@lark-base-open/js-sdk";
+import { dashboard as dashboardSdk, DashboardState, IConfig, IDashboard, bitable as bitableSdk, workspace, bridge } from "@lark-base-open/js-sdk";
 import { Button, DatePicker, ConfigProvider, Checkbox, Row, Col, Input, Switch, Select } from '@douyinfe/semi-ui';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useConfig } from '../../hooks';
@@ -21,9 +21,46 @@ export default function Dashboard() {
     milestoneFieldId: null,
     expectedTimeFieldId: null,
     actualTimeFieldId: null,
+    baseToken: null,
   })
+  const [dashboard, setDashboard] = useState<IDashboard>(dashboardSdk)
+  const [bitable, setBitable] = useState<typeof bitableSdk | null>(bitableSdk);
+  const [isMultipleBase, setIsMultipleBase] = useState<boolean | undefined>(undefined);
 
   const isCreate = dashboard.state === DashboardState.Create
+
+  useEffect(() => {
+    (async () => {
+      const env = await bridge.getEnv();
+      setIsMultipleBase(env.needChangeBase ?? false);
+    })();
+  }, []);
+
+  useEffect(() => {
+    (async () => {
+      if (isMultipleBase && !config?.baseToken) {
+        setBitable(null);
+        return;
+      }
+      const realBitable = isMultipleBase
+        ? await workspace.getBitable(config.baseToken as any)
+        : bitableSdk;
+      setBitable(realBitable);
+    })();
+  }, [config.baseToken, isMultipleBase]);
+
+  useEffect(() => {
+    (async () => {
+      if (!isMultipleBase) {
+        return;
+      }
+      const workspaceBitable = await workspace.getBitable(
+        config.baseToken!
+      );
+      const workspaceDashboard = workspaceBitable?.dashboard || dashboardSdk;
+      setDashboard(workspaceDashboard);
+    })();
+  }, [config.baseToken, isMultipleBase]);
 
   useEffect(() => {
     if (isCreate) {
@@ -31,6 +68,7 @@ export default function Dashboard() {
         milestoneFieldId: null,
         expectedTimeFieldId: null,
         actualTimeFieldId: null,
+        baseToken: null,
       })
     }
   }, [i18n.language, isCreate])
@@ -42,14 +80,13 @@ export default function Dashboard() {
 
   /** 配置用户配置 */
   const updateConfig = (res: IConfig) => {
-
     if (timer.current) {
       clearTimeout(timer.current)
     }
     const { customConfig, dataConditions } = res;
     if (customConfig) {
       customConfig.selectedTableId = dataConditions[0].tableId;
-      setConfig(customConfig as any);
+      setConfig({...customConfig, baseToken: dataConditions[0].baseToken } as any);
       timer.current = setTimeout(() => {
         //自动化发送截图。 预留3s给浏览器进行渲染，3s后告知服务端可以进行截图了（对域名进行了拦截，此功能仅上架部署后可用）。
         dashboard.setRendered();
@@ -69,12 +106,21 @@ export default function Dashboard() {
           config={config}
           isConfig={isConfig}
           previewConfig={previewConfig}
+          bitable={bitable}
         />
       </div>
       {
         isConfig && (
           <div className='layout-cfg'>
-            <ConfigPanel t={t} config={config} setConfig={setConfig} setPreviewConfig={setPreviewConfig} />
+            <ConfigPanel 
+              t={t} 
+              config={config} 
+              setConfig={setConfig} 
+              setPreviewConfig={setPreviewConfig} 
+              dashboard={dashboard} 
+              bitable={bitable}
+              isMultipleBase={isMultipleBase}
+            />
           </div>
         )
       }
@@ -88,12 +134,13 @@ interface IDashboardView {
   isConfig: boolean,
   previewConfig: any,
   t: TFunction<"translation", undefined>,
+  bitable: typeof bitableSdk | null,
 }
-function _DashboardView({ config, isConfig, t, previewConfig }: IDashboardView) {
+function _DashboardView({ config, isConfig, t, previewConfig, bitable }: IDashboardView) {
   return (
     <>
       <div className="view">
-        <DashboardView config={config} isConfig={isConfig} t={t} previewConfig={previewConfig}></DashboardView>
+        <DashboardView config={config} isConfig={isConfig} t={t} previewConfig={previewConfig} bitable={bitable}></DashboardView>
       </div>
     </>
   );
@@ -104,27 +151,42 @@ function ConfigPanel(props: {
   setConfig: any,
   setPreviewConfig: any,
   t: TFunction<"translation", undefined>,
+  dashboard: IDashboard,
+  bitable: typeof bitableSdk | null,
+  isMultipleBase: boolean | undefined,
 }) {
-  const { config, setConfig, t, setPreviewConfig } = props;
+  const { config, setConfig, t, setPreviewConfig, dashboard, bitable, isMultipleBase } = props;
   const configRef = useRef(null) as any;
   /**保存配置 */
   const onSaveConfig = () => {
     const cfg = configRef.current.handleSetConfig()
 
     if (!cfg) return
-    dashboard.saveConfig({
+
+    const saveConfig = {
       customConfig: (()=>{const {selectedTableId, ...tmp} = cfg;return tmp})(),
       dataConditions:
         [{
-          tableId: cfg.selectedTableId
+          tableId: cfg.selectedTableId,
+          baseToken: config.baseToken,
         }]
-    } as any)
+    } as any
+    dashboard.saveConfig(saveConfig)
   }
 
   return (
     <>
       <div className="layout-cfg-main">
-        <DashboardConfig config={config} setConfig={setConfig} t={t} ref={configRef} onConfigChange={(e: any) => { setPreviewConfig(e) }}></DashboardConfig>
+        <DashboardConfig 
+          config={config} 
+          setConfig={setConfig} 
+          t={t} 
+          ref={configRef} 
+          onConfigChange={(e: any) => { setPreviewConfig(e) }}
+          dashboard={dashboard}
+          bitable={bitable}
+          isMultipleBase={isMultipleBase}
+        />
       </div>
       <div className="layout-cfg-btn">
         <Button type='primary' theme='solid' size='large' className='confirmButton' onClick={onSaveConfig}>{t('button.confirm')}</Button>

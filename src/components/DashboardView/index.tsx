@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
 import "./style.css";
-import { bitable, dashboard } from '@lark-base-open/js-sdk';
 import { Tooltip } from "@douyinfe/semi-ui";
 
 let configing = false
@@ -89,7 +88,7 @@ function Item({ milestone, expectedTime, actualTime }: any) {
 }
 
 export function DashboardView(props: any) {
-  const { isConfig, t, previewConfig } = props;
+  const { isConfig, t, previewConfig, bitable } = props;
   globalT = t
   let config = props['config']
   if (previewConfig) {
@@ -103,7 +102,7 @@ export function DashboardView(props: any) {
     if (!config) return;
     const { milestoneFieldId, expectedTimeFieldId, actualTimeFieldId, selectedTableId } = config;
     (async () => {
-      const table = await bitable.base.getTable(selectedTableId);
+      const table = await bitable?.base.getTable(selectedTableId);
       let recordIdData;
       let token;
       const dataTemp = []
@@ -130,7 +129,7 @@ export function DashboardView(props: any) {
       dataTemp.sort((a: any, b: any) => a.expectedTime - b.expectedTime)
       setTimelineData(dataTemp)
     })()
-  }, [config])
+  }, [config, bitable])
 
   return (
     <>
