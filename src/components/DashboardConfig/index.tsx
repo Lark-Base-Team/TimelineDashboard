@@ -1,7 +1,8 @@
 import React, { useCallback, useEffect, useImperativeHandle, useMemo, useState } from "react";
 import "./style.css";
-import { DashboardState, FieldType, base, bitable, dashboard } from '@lark-base-open/js-sdk';
+import { DashboardState, FieldType, bitable as bitableSdk, bridge, workspace, dashboard as dashboardSdk } from '@lark-base-open/js-sdk';
 import { Button, Input, Select, Toast } from "@douyinfe/semi-ui";
+import BaseSelector from "../BaseSelector";
 
 let isInited = false
 
@@ -25,16 +26,38 @@ function FieldSelect({ t, fieldList, promptTKey, fieldId, setFieldId, fieldType,
 }
 
 function DashboardConfig(props: any, ref: any) {
+  const { dashboard, isMultipleBase, bitable } = props;
   const isCreate = dashboard.state === DashboardState.Create
 
   const { config, setConfig, t, onConfigChange } = props;
   const [tableList, setTableList] = useState([]) as any;
-  const [selectedTableId, setSelectedTableId] = useState(null) as any;
   const [fieldList, setFieldList] = useState([]) as any;
 
+  const [selectedTableId, setSelectedTableId] = useState(null) as any;
   const [milestoneFieldId, setMilestoneFieldId] = useState(null) as any;
   const [expectedTimeFieldId, setExpectedTimeFieldId] = useState(null) as any;
   const [actualTimeFieldId, setActualTimeFieldId] = useState(null) as any;
+
+   useEffect(() => {
+    const getBaseToken = async () => {
+      if (!isMultipleBase || config?.baseToken) {
+        return;
+      }
+      const baseList = await workspace.getBaseList({
+        query: "",
+        page: {
+          cursor: "",
+        },
+      });
+      const initialBaseToken = baseList?.base_list?.[0]?.token || "";
+      setConfig({
+        ...config,
+        baseToken: initialBaseToken,
+      })
+    };
+
+    getBaseToken();
+  }, [isMultipleBase]);
 
   if (config)
     useEffect(() => {
@@ -53,6 +76,7 @@ function DashboardConfig(props: any, ref: any) {
     if (isInited) return;
     if (isCreate) { // 创建状态时设置默认值
       (async () => {
+        if (!bitable) return
         const tables = await bitable.base.getTableList();
         if (tables.length == 0) return
         setSelectedTableId(tables[0].id);
@@ -84,22 +108,23 @@ function DashboardConfig(props: any, ref: any) {
     }
     if (!config) return; // 配置状态时使用config值
     if (config.selectedTableId) setSelectedTableId(config.selectedTableId);
-    dashboard.getCategories(config.selectedTableId).then(e => {
+    dashboard.getCategories(config.selectedTableId).then((e: any) => {
       setFieldList(e)
       if (config.milestoneFieldId) setMilestoneFieldId(config.milestoneFieldId);
       if (config.expectedTimeFieldId) setExpectedTimeFieldId(config.expectedTimeFieldId);
       if (config.actualTimeFieldId) setActualTimeFieldId(config.actualTimeFieldId);
       isInited = true
     })
-  }, [config])
+  }, [config, dashboard, bitable])
 
   useEffect(() => {
     (async () => {
+      if (!bitable) return
       const tables = await bitable.base.getTableList();
       setTableList(
         await Promise.all(
           tables.map(
-            async table => {
+            async (table: any) => {
               const name = await table.getName();
               return {
                 tableId: table.id,
@@ -110,7 +135,7 @@ function DashboardConfig(props: any, ref: any) {
         )
       )
     })();
-  }, [])
+  }, [bitable])
 
   function onSelect(value: any, option: any) {
     if (!value) return
@@ -122,6 +147,14 @@ function DashboardConfig(props: any, ref: any) {
       setFieldList(_fieldList)
       return _fieldList
     })();
+  }
+
+  const handleBaseChange = (baseToken: string) => {
+    setConfig({ ...config, baseToken })
+    setSelectedTableId(null)
+    setMilestoneFieldId(null)
+    setExpectedTimeFieldId(null)
+    setActualTimeFieldId(null)
   }
 
   useImperativeHandle(ref, () => ({
@@ -138,7 +171,7 @@ function DashboardConfig(props: any, ref: any) {
         actualTimeFieldId: actualTimeFieldId,
         selectedTableId: selectedTableId,
       }
-      setConfig(cfg)
+      setConfig({ ...config, ...cfg })
 
       return cfg
     }
@@ -148,6 +181,12 @@ function DashboardConfig(props: any, ref: any) {
     <>
       <div style={{ background: 'transparent' }}>
         <div className="prompt">{t('tableSource')}</div>
+         {isMultipleBase &&
+          <BaseSelector
+            baseToken={config.baseToken}
+            onChange={handleBaseChange}
+          />
+        }
         <Select placeholder={t('placeholder.pleaseSelectTable')} className="select" optionList={
           tableList.map((v: any) => { return { label: v.tableName, value: v.tableId } })
         } onChange={(e) => { setSelectedTableId(e) }} value={selectedTableId} onSelect={onSelect}></Select>
