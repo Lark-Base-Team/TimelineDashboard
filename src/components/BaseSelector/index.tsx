@@ -221,6 +221,7 @@ const BaseSelector = (props: {
           content={t(
             "仅支持选择当前空间内有可编辑及以上权限的多维表格。若多维表格开启了高级权限，则需拥有可管理及以上权限"
           )}
+          position="bottom"
         >
           <span className="info-icon">
             <svg

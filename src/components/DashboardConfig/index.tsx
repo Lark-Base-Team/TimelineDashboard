@@ -1,12 +1,12 @@
 import React, { useCallback, useEffect, useImperativeHandle, useMemo, useState } from "react";
 import "./style.css";
 import { DashboardState, FieldType, bitable as bitableSdk, bridge, workspace, dashboard as dashboardSdk } from '@lark-base-open/js-sdk';
-import { Button, Input, Select, Toast } from "@douyinfe/semi-ui";
+import { Button, Input, Select, Spin, Toast } from "@douyinfe/semi-ui";
 import BaseSelector from "../BaseSelector";
 
 let isInited = false
 
-function FieldSelect({ t, fieldList, promptTKey, fieldId, setFieldId, fieldType, placeholder, mutuallyExclusiveId }: any) {
+function FieldSelect({ t, fieldList, promptTKey, fieldId, setFieldId, fieldType, placeholder, mutuallyExclusiveId, tableLoading }: any) {
   return (<>
     <div className="prompt">{t(promptTKey)}</div>
     <Select dropdownMatchSelectWidth placeholder={t(placeholder)} className="select" optionList={
@@ -21,6 +21,8 @@ function FieldSelect({ t, fieldList, promptTKey, fieldId, setFieldId, fieldType,
     } onChange={(e) => {
       setFieldId(e)
     }} value={fieldId}
+    disabled={tableLoading}
+    renderSelectedItem={tableLoading ? () => <Spin /> : undefined}
     ></Select >
   </>
   )
@@ -38,6 +40,7 @@ function DashboardConfig(props: any, ref: any) {
   const [milestoneFieldId, setMilestoneFieldId] = useState(null) as any;
   const [expectedTimeFieldId, setExpectedTimeFieldId] = useState(null) as any;
   const [actualTimeFieldId, setActualTimeFieldId] = useState(null) as any;
+  const [tableLoading, setTableLoading] = useState(false);
 
    useEffect(() => {
     const getBaseToken = async () => {
@@ -59,6 +62,28 @@ function DashboardConfig(props: any, ref: any) {
 
     getBaseToken();
   }, [isMultipleBase]);
+
+  useEffect(() => {
+    (async () => {
+      if (!bitable) return
+      setTableLoading(true);
+      const tables = await bitable.base.getTableList();
+      setTableList(
+        await Promise.all(
+          tables.map(
+            async (table: any) => {
+              const name = await table.getName();
+              return {
+                tableId: table.id,
+                tableName: name
+              }
+            }
+          )
+        )
+      )
+      setTableLoading(false);
+    })();
+  }, [bitable])
 
   if (config)
     useEffect(() => {
@@ -116,27 +141,7 @@ function DashboardConfig(props: any, ref: any) {
       if (config.actualTimeFieldId) setActualTimeFieldId(config.actualTimeFieldId);
       isInited = true
     })
-  }, [config, dashboard, bitable])
-
-  useEffect(() => {
-    (async () => {
-      if (!bitable) return
-      const tables = await bitable.base.getTableList();
-      setTableList(
-        await Promise.all(
-          tables.map(
-            async (table: any) => {
-              const name = await table.getName();
-              return {
-                tableId: table.id,
-                tableName: name
-              }
-            }
-          )
-        )
-      )
-    })();
-  }, [bitable])
+  }, [dashboard, bitable])
 
   function onSelect(value: any, option: any) {
     if (!value) return
@@ -188,13 +193,22 @@ function DashboardConfig(props: any, ref: any) {
           />
         }
         <div className="prompt">{t('tableSource')}</div>
-        <Select dropdownMatchSelectWidth placeholder={t('placeholder.pleaseSelectTable')} className="select" optionList={
-          tableList.map((v: any) => { return { label: v.tableName, value: v.tableId } })
-        } onChange={(e) => { setSelectedTableId(e) }} value={selectedTableId} onSelect={onSelect}></Select>
+        <Select 
+          placeholder={t('placeholder.pleaseSelectTable')} className="select" 
+          optionList={
+            tableList.map((v: any) => { return { label: v.tableName, value: v.tableId } })
+          } 
+          onChange={(e) => { setSelectedTableId(e) }} 
+          value={selectedTableId} 
+          onSelect={onSelect}
+          disabled={tableLoading}
+          renderSelectedItem={tableLoading ? () => <Spin /> : undefined}
+        >
+        </Select>
 
-        <FieldSelect t={t} fieldList={fieldList} promptTKey='field.milestone' fieldId={milestoneFieldId} setFieldId={setMilestoneFieldId} fieldType={FieldType.Text} placeholder="placeholder.pleaseSelectField" mutuallyExclusiveId={null}></FieldSelect>
-        <FieldSelect t={t} fieldList={fieldList} promptTKey='field.expectedTime' fieldId={expectedTimeFieldId} setFieldId={setExpectedTimeFieldId} fieldType={FieldType.DateTime} placeholder="placeholder.pleaseSelectDateField" mutuallyExclusiveId={actualTimeFieldId}></FieldSelect>
-        <FieldSelect t={t} fieldList={fieldList} promptTKey='field.actualTime' fieldId={actualTimeFieldId} setFieldId={setActualTimeFieldId} fieldType={FieldType.DateTime} placeholder="placeholder.pleaseSelectDateField" mutuallyExclusiveId={expectedTimeFieldId}></FieldSelect>
+        <FieldSelect t={t} fieldList={fieldList} promptTKey='field.milestone' fieldId={milestoneFieldId} setFieldId={setMilestoneFieldId} fieldType={FieldType.Text} placeholder="placeholder.pleaseSelectField" mutuallyExclusiveId={null} tableLoading={tableLoading}></FieldSelect>
+        <FieldSelect t={t} fieldList={fieldList} promptTKey='field.expectedTime' fieldId={expectedTimeFieldId} setFieldId={setExpectedTimeFieldId} fieldType={FieldType.DateTime} placeholder="placeholder.pleaseSelectDateField" mutuallyExclusiveId={actualTimeFieldId} tableLoading={tableLoading}></FieldSelect>
+        <FieldSelect t={t} fieldList={fieldList} promptTKey='field.actualTime' fieldId={actualTimeFieldId} setFieldId={setActualTimeFieldId} fieldType={FieldType.DateTime} placeholder="placeholder.pleaseSelectDateField" mutuallyExclusiveId={expectedTimeFieldId} tableLoading={tableLoading}></FieldSelect>
         <div className="title">
           <div className="titlet">
             <a className="help" href="https://wingahead.feishu.cn/wiki/NjoJwa38WidGiikx8i2cyUeKnsd?from=from_copylink" target="_blank" rel="noopener noreferrer">帮助文档</a>
