@@ -9,7 +9,7 @@ let isInited = false
 function FieldSelect({ t, fieldList, promptTKey, fieldId, setFieldId, fieldType, placeholder, mutuallyExclusiveId }: any) {
   return (<>
     <div className="prompt">{t(promptTKey)}</div>
-    <Select placeholder={t(placeholder)} className="select" optionList={
+    <Select dropdownMatchSelectWidth placeholder={t(placeholder)} className="select" optionList={
       fieldList.filter((v: any, i: any) => {
         return v.fieldType == fieldType && v.fieldId != mutuallyExclusiveId
       }).map((v: any, i: any) => {
@@ -20,7 +20,8 @@ function FieldSelect({ t, fieldList, promptTKey, fieldId, setFieldId, fieldType,
       })
     } onChange={(e) => {
       setFieldId(e)
-    }} value={fieldId}></Select >
+    }} value={fieldId}
+    ></Select >
   </>
   )
 }
@@ -180,14 +181,14 @@ function DashboardConfig(props: any, ref: any) {
   return (
     <>
       <div style={{ background: 'transparent' }}>
-        <div className="prompt">{t('tableSource')}</div>
-         {isMultipleBase &&
+        {isMultipleBase &&
           <BaseSelector
             baseToken={config.baseToken}
             onChange={handleBaseChange}
           />
         }
-        <Select placeholder={t('placeholder.pleaseSelectTable')} className="select" optionList={
+        <div className="prompt">{t('tableSource')}</div>
+        <Select dropdownMatchSelectWidth placeholder={t('placeholder.pleaseSelectTable')} className="select" optionList={
           tableList.map((v: any) => { return { label: v.tableName, value: v.tableId } })
         } onChange={(e) => { setSelectedTableId(e) }} value={selectedTableId} onSelect={onSelect}></Select>
 

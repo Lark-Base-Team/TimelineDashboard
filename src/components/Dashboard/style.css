@@ -16,6 +16,7 @@ main {
 .layout-cfg {
     border-left: .5px solid var(--boarder-config);
     flex: 0 340px;
+    width: 340px;
     height: 100%;
     position: relative;
     box-sizing: border-box;
