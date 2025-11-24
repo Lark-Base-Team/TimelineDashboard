@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from "react";
 import "./style.css";
 import { Tooltip } from "@douyinfe/semi-ui";
+// @ts-ignore
+import NotFoundSVG from "../../assets/illustration_empty-neutral-no-access.svg";
 
 let configing = false
 let globalT = undefined as any
@@ -95,6 +97,8 @@ export function DashboardView(props: any) {
     config = previewConfig
   }
   const [timelineData, setTimelineData] = useState([]) as any;
+  const [isTableNotFound, setIsTableNotFound] = useState(false);
+
   useEffect(() => {
     configing = isConfig
   }, [isConfig])
@@ -102,11 +106,20 @@ export function DashboardView(props: any) {
     if (!config) return;
     const { milestoneFieldId, expectedTimeFieldId, actualTimeFieldId, selectedTableId } = config;
     (async () => {
-      const table = await bitable?.base.getTable(selectedTableId);
+      if (!selectedTableId) return;
+
+      let table;
+      try {
+        table = await bitable?.base.getTable(selectedTableId);
+      } catch (error) {
+        console.log('====getTable error====', selectedTableId, bitable, error)
+        setIsTableNotFound(true);
+      }
       let recordIdData;
       let token;
       const dataTemp = []
-      do {
+      try {
+        do {
         recordIdData = await table.getRecordIdListByPage(token ? {
           pageToken: token
         } : {});
@@ -125,12 +138,24 @@ export function DashboardView(props: any) {
           }
         }
       } while (recordIdData.hasMore);
+      } catch (error) {
+        console.log('====getTableXXXX error====', error)
+        setIsTableNotFound(true);
+      }
       // 按expectedTime排序
       dataTemp.sort((a: any, b: any) => a.expectedTime - b.expectedTime)
       setTimelineData(dataTemp)
     })()
   }, [config, bitable])
 
+  if (!isConfig && isTableNotFound) {
+    return (
+      <div className={c("empty")}>
+        <img className={c("illustration")} src={NotFoundSVG} />
+        <div className={c("text")}>{t("无权限查看组件")}</div>
+      </div>
+    );
+  }
   return (
     <>
       <div className={c("space")}>

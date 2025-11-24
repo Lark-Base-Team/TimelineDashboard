@@ -19,7 +19,7 @@ body[theme-mode="light"] {
     --timeline: #CCCCCC;
     --datetime: #1F2329;
     --boarder-config: rgba(31, 35, 41, .15);
-
+    --text-caption: #646a73;
 }
 
 body[theme-mode="dark"] {
@@ -39,6 +39,7 @@ body[theme-mode="dark"] {
     --timeline: #CCCCCC;
     --datetime: #CCCCCC;
     --boarder-config: rgba(207, 207, 207, .15);
+    --text-caption: #a6a6a6;
 }
 
 html,

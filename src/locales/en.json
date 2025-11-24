@@ -19,5 +19,6 @@
   "仅支持选择当前空间内有可编辑及以上权限的多维表格。若多维表格开启了高级权限，则需拥有可管理及以上权限": "Only bases with edit or above permissions in the workspace can be selected. For bases with advanced permissions, manage or ownership permissions are required.",
   "请选择多维表格": "Select base",
   "暂无匹配结果": "No matching results found",
-  "跳转到多维表格": "Redirect to Base"
+  "跳转到多维表格": "Redirect to Base",
+  "无权限查看组件": "No permission to view blocks"
 }

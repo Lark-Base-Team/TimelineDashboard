@@ -108,3 +108,18 @@
   font-size: 2.25vh;
   /* Converted from 11.22vh */
 }
+
+.empty {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+
+  .text {
+    color: var(--text-caption);
+    font-size: 14px;
+    line-height: 22px;
+  }
+}
