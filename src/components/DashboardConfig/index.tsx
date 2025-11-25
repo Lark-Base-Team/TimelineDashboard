@@ -29,7 +29,7 @@ function FieldSelect({ t, fieldList, promptTKey, fieldId, setFieldId, fieldType,
 }
 
 function DashboardConfig(props: any, ref: any) {
-  const { dashboard, isMultipleBase, bitable } = props;
+  const { dashboard, isMultipleBase, bitable, configLoaded } = props;
   const isCreate = dashboard.state === DashboardState.Create
 
   const { config, setConfig, t, onConfigChange } = props;
@@ -44,7 +44,7 @@ function DashboardConfig(props: any, ref: any) {
 
    useEffect(() => {
     const getBaseToken = async () => {
-      if (!isMultipleBase || config?.baseToken) {
+      if (!configLoaded || !isMultipleBase || config?.baseToken) {
         return;
       }
       const baseList = await workspace.getBaseList({
@@ -61,7 +61,7 @@ function DashboardConfig(props: any, ref: any) {
     };
 
     getBaseToken();
-  }, [isMultipleBase]);
+  }, [isMultipleBase, configLoaded]);
 
   useEffect(() => {
     (async () => {

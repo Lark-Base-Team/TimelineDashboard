@@ -26,6 +26,7 @@ export default function Dashboard() {
   const [dashboard, setDashboard] = useState<IDashboard>(dashboardSdk)
   const [bitable, setBitable] = useState<typeof bitableSdk | null>(bitableSdk);
   const [isMultipleBase, setIsMultipleBase] = useState<boolean | undefined>(undefined);
+  const [configLoaded, setConfigLoaded] = useState(false);
 
   const isCreate = dashboard.state === DashboardState.Create
 
@@ -93,7 +94,7 @@ export default function Dashboard() {
       }, 3000);
 
     }
-
+    setConfigLoaded(true);
   }
 
   useConfig(updateConfig)
@@ -120,6 +121,7 @@ export default function Dashboard() {
               dashboard={dashboard} 
               bitable={bitable}
               isMultipleBase={isMultipleBase}
+              configLoaded={configLoaded}
             />
           </div>
         )
@@ -154,8 +156,9 @@ function ConfigPanel(props: {
   dashboard: IDashboard,
   bitable: typeof bitableSdk | null,
   isMultipleBase: boolean | undefined,
+  configLoaded: boolean,
 }) {
-  const { config, setConfig, t, setPreviewConfig, dashboard, bitable, isMultipleBase } = props;
+  const { config, setConfig, t, setPreviewConfig, dashboard, bitable, isMultipleBase, configLoaded } = props;
   const configRef = useRef(null) as any;
   /**保存配置 */
   const onSaveConfig = () => {
@@ -186,6 +189,7 @@ function ConfigPanel(props: {
           dashboard={dashboard}
           bitable={bitable}
           isMultipleBase={isMultipleBase}
+          configLoaded={configLoaded}
         />
       </div>
       <div className="layout-cfg-btn">

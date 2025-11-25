@@ -103,14 +103,14 @@ export function DashboardView(props: any) {
     configing = isConfig
   }, [isConfig])
   useEffect(() => {
-    if (!config) return;
+    if (!config || !bitable) return;
     const { milestoneFieldId, expectedTimeFieldId, actualTimeFieldId, selectedTableId } = config;
     (async () => {
       if (!selectedTableId) return;
 
       let table;
       try {
-        table = await bitable?.base.getTable(selectedTableId);
+        table = await bitable.base.getTable(selectedTableId);
       } catch (error) {
         console.log('====getTable error====', selectedTableId, bitable, error)
         setIsTableNotFound(true);
@@ -139,7 +139,7 @@ export function DashboardView(props: any) {
         }
       } while (recordIdData.hasMore);
       } catch (error) {
-        console.log('====getTableXXXX error====', error)
+        console.log('====getTableXXXX error====', selectedTableId, bitable, error)
         setIsTableNotFound(true);
       }
       // 按expectedTime排序
