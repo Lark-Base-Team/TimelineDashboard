@@ -132,7 +132,7 @@ function DashboardConfig(props: any, ref: any) {
 
       })();
     }
-    if (!config) return; // 配置状态时使用config值
+    if (!config?.selectedTableId) return; // 配置状态时使用config值
     if (config.selectedTableId) setSelectedTableId(config.selectedTableId);
     dashboard.getCategories(config.selectedTableId).then((e: any) => {
       setFieldList(e)

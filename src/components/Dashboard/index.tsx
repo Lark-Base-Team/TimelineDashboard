@@ -29,6 +29,7 @@ export default function Dashboard() {
   const [configLoaded, setConfigLoaded] = useState(false);
 
   const isCreate = dashboard.state === DashboardState.Create
+  const isView = dashboard.state === DashboardState.View
 
   useEffect(() => {
     (async () => {
@@ -41,25 +42,15 @@ export default function Dashboard() {
     (async () => {
       if (isMultipleBase && !config?.baseToken) {
         setBitable(null);
+        setDashboard(dashboardSdk);
         return;
       }
-      const realBitable = isMultipleBase
-        ? await workspace.getBitable(config.baseToken as any)
-        : bitableSdk;
+      // view模式下，getBitable由于实现问题会报错，使用默认导出的bitable能保证baseToken、tableId正常渲染，先用该方式绕过
+      const realBitable = (isMultipleBase && !isView)
+      ? await workspace.getBitable(config.baseToken as any)
+      : bitableSdk;
       setBitable(realBitable);
-    })();
-  }, [config.baseToken, isMultipleBase]);
-
-  useEffect(() => {
-    (async () => {
-      if (!isMultipleBase) {
-        return;
-      }
-      const workspaceBitable = await workspace.getBitable(
-        config.baseToken!
-      );
-      const workspaceDashboard = workspaceBitable?.dashboard || dashboardSdk;
-      setDashboard(workspaceDashboard);
+      setDashboard(realBitable?.dashboard || dashboardSdk);
     })();
   }, [config.baseToken, isMultipleBase]);
 
