@@ -242,7 +242,7 @@ const BaseSelector = (props: {
       </div>
       <Select
         className="select"
-        searchPosition="dropdown"
+        // searchPosition="dropdown"
         filter
         remote
         dropdownMatchSelectWidth
